@@ -20,6 +20,9 @@ function MeetingPage() {
     const videoContainerRef = useRef(null);
 
     useEffect(() => {
+        console.log("---sdkKey", sdkKey);
+        console.log("---sdkSecret", sdkSecret);
+
         const initZoomClient = async () => {
             try {
                 if (!("getDisplayMedia" in navigator.mediaDevices)) {
