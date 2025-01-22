@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import ZoomVideo from "@zoom/videosdk";
+import ZoomVideo, { VideoQuality } from "@zoom/videosdk";
 import { generateSignature } from "../utils/utils";
 
 const sdkKey = import.meta.env.VITE_SDK_KEY;
@@ -88,7 +88,9 @@ function MeetingPage() {
 
                 // Start audio and video
                 await mediaStream.startAudio();
-                await mediaStream.startVideo({ fullHd: true });
+                await mediaStream.startVideo({
+                    videoQuality: VideoQuality.Video_360P,
+                });
 
                 // Attach self-view video
                 const userVideo = await mediaStream.attachVideo(
@@ -171,7 +173,6 @@ function MeetingPage() {
             console.log(`Switched to ${newCamera} camera`);
         }
     };
-
 
     if (!client || !mediaStream) {
         return <p>Loading Zoom client...</p>;
