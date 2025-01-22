@@ -19,50 +19,50 @@ function MeetingPage() {
     const [currentCamera, setCurrentCamera] = useState("user"); // Current camera
     const videoContainerRef = useRef(null);
 
-    const isBrowserSupported = () => {
-        const isChrome =
-            /Chrome/.test(navigator.userAgent) &&
-            /Google Inc/.test(navigator.vendor);
-        const isEdge = /Edg/.test(navigator.userAgent);
-        const isFirefox = /Firefox/.test(navigator.userAgent);
+    // const isBrowserSupported = () => {
+    //     const isChrome =
+    //         /Chrome/.test(navigator.userAgent) &&
+    //         /Google Inc/.test(navigator.vendor);
+    //     const isEdge = /Edg/.test(navigator.userAgent);
+    //     const isFirefox = /Firefox/.test(navigator.userAgent);
 
-        const hasRequiredAPIs =
-            "getUserMedia" in navigator.mediaDevices &&
-            "RTCPeerConnection" in window &&
-            "getDisplayMedia" in navigator.mediaDevices;
+    //     const hasRequiredAPIs =
+    //         "getUserMedia" in navigator.mediaDevices &&
+    //         "RTCPeerConnection" in window &&
+    //         "getDisplayMedia" in navigator.mediaDevices;
 
-        return (isChrome || isEdge || isFirefox) && hasRequiredAPIs;
-    };
+    //     return (isChrome || isEdge || isFirefox) && hasRequiredAPIs;
+    // };
 
     useEffect(() => {
         console.log("---sdkKey", sdkKey);
         console.log("---sdkSecret", sdkSecret);
-        if (!isBrowserSupported()) {
-            alert(
-                "Your browser does not support required media APIs. Please use the latest Chrome, Edge, or Firefox on desktop."
-            );
-        }
+        // if (!isBrowserSupported()) {
+        //     alert(
+        //         "Your browser does not support required media APIs. Please use the latest Chrome, Edge, or Firefox on desktop."
+        //     );
+        // }
 
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        // const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-        if (isMobile && !isBrowserSupported()) {
-            alert(
-                "The Zoom Video SDK has limited support on mobile browsers. Please use the Zoom Mobile App or a desktop browser for the best experience."
-            );
-            return;
-        }
+        // if (isMobile && !isBrowserSupported()) {
+        //     alert(
+        //         "The Zoom Video SDK has limited support on mobile browsers. Please use the Zoom Mobile App or a desktop browser for the best experience."
+        //     );
+        //     return;
+        // }
 
         const initZoomClient = async () => {
             try {
-                if (!("getDisplayMedia" in navigator.mediaDevices)) {
-                    console.error(
-                        "Browser does not support required media APIs."
-                    );
-                    alert(
-                        "Your browser does not support the required media APIs. Please use the latest version of Chrome, Edge, or Firefox."
-                    );
-                    return;
-                }
+                // if (!("getDisplayMedia" in navigator.mediaDevices)) {
+                //     console.error(
+                //         "Browser does not support required media APIs."
+                //     );
+                //     alert(
+                //         "Your browser does not support the required media APIs. Please use the latest version of Chrome, Edge, or Firefox."
+                //     );
+                //     return;
+                // }
 
                 const zoomClient = ZoomVideo.createClient();
                 await zoomClient.init("en-US", "Global", {
@@ -171,6 +171,7 @@ function MeetingPage() {
             console.log(`Switched to ${newCamera} camera`);
         }
     };
+
 
     if (!client || !mediaStream) {
         return <p>Loading Zoom client...</p>;
