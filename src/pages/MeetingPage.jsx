@@ -1,6 +1,5 @@
-// copy 5
 import { useEffect, useState, useRef } from "react";
-import ZoomVideo from "@zoom/videosdk";
+import ZoomVideo, { VideoQuality } from "@zoom/videosdk";
 import { generateSignature } from "../utils/utils";
 
 const sdkKey = import.meta.env.VITE_SDK_KEY;
@@ -17,22 +16,53 @@ function MeetingPage() {
     const [isJoining, setIsJoining] = useState(false); // Track joining status
     const [isAudioMuted, setIsAudioMuted] = useState(false); // Track audio status
     const [isVideoMuted, setIsVideoMuted] = useState(false); // Track video status
-    const [participants, setParticipants] = useState([]); // Track participants
+    const [currentCamera, setCurrentCamera] = useState("user"); // Current camera
     const videoContainerRef = useRef(null);
-    const participantVideosRef = useRef({}); // Store video elements for participants
+
+    // const isBrowserSupported = () => {
+    //     const isChrome =
+    //         /Chrome/.test(navigator.userAgent) &&
+    //         /Google Inc/.test(navigator.vendor);
+    //     const isEdge = /Edg/.test(navigator.userAgent);
+    //     const isFirefox = /Firefox/.test(navigator.userAgent);
+
+    //     const hasRequiredAPIs =
+    //         "getUserMedia" in navigator.mediaDevices &&
+    //         "RTCPeerConnection" in window &&
+    //         "getDisplayMedia" in navigator.mediaDevices;
+
+    //     return (isChrome || isEdge || isFirefox) && hasRequiredAPIs;
+    // };
 
     useEffect(() => {
+        console.log("---sdkKey", sdkKey);
+        console.log("---sdkSecret", sdkSecret);
+        // if (!isBrowserSupported()) {
+        //     alert(
+        //         "Your browser does not support required media APIs. Please use the latest Chrome, Edge, or Firefox on desktop."
+        //     );
+        // }
+
+        // const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        // if (isMobile && !isBrowserSupported()) {
+        //     alert(
+        //         "The Zoom Video SDK has limited support on mobile browsers. Please use the Zoom Mobile App or a desktop browser for the best experience."
+        //     );
+        //     return;
+        // }
+
         const initZoomClient = async () => {
             try {
-                if (!("getDisplayMedia" in navigator.mediaDevices)) {
-                    console.error(
-                        "Browser does not support required media APIs."
-                    );
-                    alert(
-                        "Your browser does not support the required media APIs. Please use the latest version of Chrome, Edge, or Firefox."
-                    );
-                    return;
-                }
+                // if (!("getDisplayMedia" in navigator.mediaDevices)) {
+                //     console.error(
+                //         "Browser does not support required media APIs."
+                //     );
+                //     alert(
+                //         "Your browser does not support the required media APIs. Please use the latest version of Chrome, Edge, or Firefox."
+                //     );
+                //     return;
+                // }
 
                 const zoomClient = ZoomVideo.createClient();
                 await zoomClient.init("en-US", "Global", {
@@ -58,7 +88,9 @@ function MeetingPage() {
 
                 // Start audio and video
                 await mediaStream.startAudio();
-                await mediaStream.startVideo({ fullHd: true });
+                await mediaStream.startVideo({
+                    videoQuality: VideoQuality.Video_360P,
+                });
 
                 // Attach self-view video
                 const userVideo = await mediaStream.attachVideo(
@@ -78,17 +110,6 @@ function MeetingPage() {
                     videoContainer.appendChild(userVideoContainer);
                 }
 
-                // Set up event listeners for participants
-                client.on("user-added", (user) => {
-                    console.log("User added:", user);
-                    handleUserAdded(user);
-                });
-
-                client.on("user-removed", (user) => {
-                    console.log("User removed:", user);
-                    handleUserRemoved(user);
-                });
-
                 // Update meeting status
                 setIsJoining(false); // Reset joining status
                 setIsInMeeting(true);
@@ -106,13 +127,14 @@ function MeetingPage() {
         if (client) {
             try {
                 await client.leave();
+
                 // Clear video container
                 const videoContainer = videoContainerRef.current;
                 if (videoContainer) {
                     videoContainer.innerHTML = ""; // Clear any appended video elements
                 }
-                setParticipants([]); // Reset participants
-                setIsInMeeting(false);
+
+                setIsInMeeting(false); // Reset meeting state
                 console.log("Left the meeting");
             } catch (error) {
                 console.error("Error leaving the meeting:", error);
@@ -142,51 +164,13 @@ function MeetingPage() {
         }
     };
 
-    const handleUserAdded = async (user) => {
-        if (mediaStream && user) {
-            console.log("Adding user video for:", user.userId);
-            const participantVideo = await mediaStream.attachVideo(
-                user.userId,
-                RESOLUTION
-            );
-
-            // Create a container for the remote participant's video
-            const videoContainer = videoContainerRef.current;
-            if (videoContainer && participantVideo) {
-                const participantVideoContainer = document.createElement("div");
-                participantVideoContainer.id = `participant-${user.userId}`;
-                participantVideoContainer.style.margin = "10px";
-                participantVideoContainer.appendChild(participantVideo);
-                videoContainer.appendChild(participantVideoContainer);
-
-                participantVideosRef.current[user.userId] =
-                    participantVideoContainer;
-                console.log({ userId: user.userId, userName: user.userName });
-
-                // Update participant list
-                setParticipants((prevParticipants) => [
-                    ...prevParticipants,
-                    { userId: user.userId, userName: user.userName },
-                ]);
-            }
-        }
-    };
-
-    const handleUserRemoved = (user) => {
-        console.log("Removing user video for:", user.userId);
-        const videoContainer = videoContainerRef.current;
-        const participantVideoContainer =
-            participantVideosRef.current[user.userId];
-        if (videoContainer && participantVideoContainer) {
-            videoContainer.removeChild(participantVideoContainer);
-            delete participantVideosRef.current[user.userId];
-
-            // Update participant list
-            setParticipants((prevParticipants) =>
-                prevParticipants.filter(
-                    (participant) => participant.userId !== user.userId
-                )
-            );
+    const switchCamera = async () => {
+        if (mediaStream) {
+            // Switch between front and back cameras
+            const newCamera = currentCamera === "user" ? "environment" : "user";
+            await mediaStream.switchCamera(newCamera);
+            setCurrentCamera(newCamera);
+            console.log(`Switched to ${newCamera} camera`);
         }
     };
 
@@ -225,6 +209,12 @@ function MeetingPage() {
                     >
                         {isVideoMuted ? "Start Video" : "Stop Video"}
                     </button>
+                    <button
+                        className="py-4 px-6 bg-purple-500 rounded-xl uppercase text-white ml-2"
+                        onClick={switchCamera}
+                    >
+                        Switch Camera
+                    </button>
                 </>
             )}
             <div
@@ -236,22 +226,10 @@ function MeetingPage() {
                     gap: "10px", // Add space between videos
                     backgroundColor: "#000", // Black background for video
                     width: "100%", // Ensure the container uses full width
-                    justifyContent: "center", // Center videos horizontally
+                    justifyContent: "center", // Center videos horizontally,
+                    height: "calc(100vh - 200px)", // Set height to fill the remaining space
                 }}
             ></div>
-            {isInMeeting && (
-                <div style={{ marginTop: "20px" }}>
-                    <h3>Participants</h3>
-                    <ul>
-                        {participants.map((participant) => (
-                            <li key={participant.userId}>
-                                {participant.userName ||
-                                    `User-${participant.userId}`}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
         </div>
     );
 }
